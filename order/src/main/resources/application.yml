@@ -1,0 +1,33 @@
+spring:
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://robs-bank-db:5432/postgres}
+    username: ${SPRING_DATASOURCE_USERNAME:urbano}
+    password: ${SPRING_DATASOURCE_PASSWORD:urbano}
+  jpa:
+    hibernate:
+      ddl-auto: none
+    properties:
+      hibernate:
+        default_schema: services_schema
+  application:
+    name: order
+
+#eureka:
+#  client:
+#    register-with-eureka: true
+#    serviceUrl:
+#      defaultZone: ${EUREKA_SERVER:http://eureka:8761/eureka}
+#    healthcheck:
+#      enabled: true
+
+#management:
+#  endpoints:
+#    web:
+#      exposure:
+#        include:
+#          - mappings
+#          - env
+#          - health
+server:
+  port: 8081
+#          - info

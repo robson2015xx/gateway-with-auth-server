@@ -1,0 +1,53 @@
+spring:
+  cloud:
+    gateway:
+      routes:
+        - id: order
+          uri: http://order:8081
+          predicates:
+            - Path=/order/**
+        - id: auth
+          uri: http://auth
+          predicates:
+            - Path=/auth/**
+      discovery:
+        locator:
+          lower-case-service-id: true
+          enabled: true
+    discovery:
+      enabled: true
+  application:
+    name: gateway
+  security:
+    oauth2:
+      client:
+        registration:
+          robs-s-oidc:
+            provider: spring
+            client-id: robs-s
+            client-secret: robs
+            authorization-grant-type: authorization_code
+            redirect-uri: "http://localhost:8080/login/oauth2/code/{registrationId}"
+            scope: openid, profile
+            client-name: robs-s-oidc
+        provider:
+          spring:
+            issuer-uri: http://auth:9000
+            authorization-uri: http://localhost:9000/authorize
+management:
+  endpoints:
+    web:
+      exposure:
+        include:
+          - mappings
+          - env
+          - health
+          - info
+
+logging:
+  level:
+    org.springframework.cloud.gateway: TRACE
+    org.springframework.http.server.reactive: DEBUG
+    org.springframework.web.reactive: DEBUG
+    reactor.ipc.netty: DEBUG
+    reactor.netty: DEBUG

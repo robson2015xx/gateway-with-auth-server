@@ -1,0 +1,154 @@
+name: urbano-bank-server
+
+services:
+#  zookeeper:
+#    hostname: zookeeper
+#    image: confluentinc/cp-zookeeper:latest
+#    environment:
+#      ZOOKEEPER_CLIENT_PORT: 2181
+#      ZOOKEEPER_TICK_TIME: 2000
+#    ports:
+#      - 22181:2181
+#
+#  kafka:
+#    hostname: kafka
+#    image: confluentinc/cp-kafka:latest
+#    depends_on:
+#      - zookeeper
+#    ports:
+#      - 9092:9092
+#    environment:
+#      KAFKA_BROKER_ID: 1
+#      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+#      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://kafka:29092
+#      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+#      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+#      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+
+#  eureka:
+#    build:
+#      context: eurekaRegistry
+#      dockerfile: Dockerfile
+#    deploy:
+#      replicas: 1
+#      update_config:
+#        parallelism: 1
+#        delay: 10s
+#      restart_policy:
+#        condition: on-failure
+#        delay: 3s
+#        max_attempts: 5
+#        window: 60s
+#    container_name: eureka
+#    ports:
+#      - 8761
+
+  robs-bank-db:
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 3s
+        max_attempts: 5
+        window: 60s
+    container_name: urbano-bank-db
+    build:
+      context: db
+      dockerfile: Dockerfile
+    ports:
+      - 5452:5432
+    volumes:
+      - 'pgdata:/var/lib/postgresql/data'
+    environment:
+      - POSTGRES_PASSWORD=urbano
+    restart: always
+
+  order:
+    build:
+      context: order
+      dockerfile: Dockerfile
+    deploy:
+      replicas: 1
+      update_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+        delay: 3s
+        max_attempts: 5
+        window: 60s
+    container_name: order
+    ports:
+      - 8081
+    depends_on:
+      - robs-bank-db
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://urbano-bank-db:5432/postgres
+      - SPRING_DATASOURCE_USERNAME=urbano
+      - SPRING_DATASOURCE_PASSWORD=urbano
+
+  auth:
+    build:
+      context: springSecurity
+      dockerfile: Dockerfile
+    deploy:
+      replicas: 1
+      update_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+        delay: 3s
+        max_attempts: 5
+        window: 60s
+    container_name: auth
+    ports:
+      - 9000:9000
+    depends_on:
+      - order
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://robs-bank-db:5432/postgres
+      - SPRING_DATASOURCE_USERNAME=urbano
+      - SPRING_DATASOURCE_PASSWORD=urbano
+
+#  kafka-demo:
+#    build:
+#      context: kafkaDemo
+#      dockerfile: Dockerfile
+#    deploy:
+#      replicas: 1
+#      update_config:
+#        parallelism: 1
+#        delay: 10s
+#      restart_policy:
+#        condition: on-failure
+#        delay: 3s
+#        max_attempts: 5
+#        window: 60s
+#    container_name: kafka-demo
+#    ports:
+#      - 8764
+#    depends_on:
+#      - spring-security
+#
+  gateway:
+    build:
+      context: gateway
+      dockerfile: Dockerfile
+    deploy:
+      replicas: 1
+      update_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+        delay: 3s
+        max_attempts: 5
+        window: 60s
+    container_name: gateway
+    ports:
+      - 8080:8080
+    depends_on:
+      - order
+
+volumes:
+  pgdata:
